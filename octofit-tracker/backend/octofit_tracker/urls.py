@@ -16,7 +16,30 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 from .views import UserViewSet, TeamViewSet, ActivityViewSet, LeaderboardViewSet, WorkoutViewSet
+import os
+
+# Get codespace URL or use localhost
+codespace_name = os.environ.get('CODESPACE_NAME')
+if codespace_name:
+    base_url = f"https://{codespace_name}-8000.app.github.dev"
+else:
+    base_url = "http://localhost:8000"
+
+@api_view(['GET'])
+def api_root(request):
+    """
+    API root endpoint that returns all available API endpoints.
+    """
+    return Response({
+        'users': f'{base_url}/api/users/',
+        'teams': f'{base_url}/api/teams/',
+        'activities': f'{base_url}/api/activities/',
+        'leaderboard': f'{base_url}/api/leaderboard/',
+        'workouts': f'{base_url}/api/workouts/',
+    })
 
 # Create a router and register our viewsets with it
 router = DefaultRouter()
@@ -28,6 +51,7 @@ router.register(r'workouts', WorkoutViewSet, basename='workout')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/', api_root, name='api-root'),
     path('', include(router.urls)),  # Root path points to API with api_root view
     path('api/', include(router.urls)),  # Keep backward compatibility
 ]
