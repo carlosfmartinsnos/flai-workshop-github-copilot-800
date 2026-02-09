@@ -10,10 +10,16 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class TeamSerializer(serializers.ModelSerializer):
+    member_count = serializers.SerializerMethodField()
+    
     class Meta:
         model = Team
         fields = ['id', 'name', 'description', 'total_points', 'member_count', 'created_at', 'updated_at']
         read_only_fields = ['id', 'created_at', 'updated_at']
+    
+    def get_member_count(self, obj):
+        """Dynamically calculate member count from User model"""
+        return User.objects.filter(team=obj.name).count()
 
 
 class ActivitySerializer(serializers.ModelSerializer):
@@ -25,10 +31,21 @@ class ActivitySerializer(serializers.ModelSerializer):
 
 
 class LeaderboardSerializer(serializers.ModelSerializer):
+    activities_count = serializers.SerializerMethodField()
+    
     class Meta:
         model = Leaderboard
-        fields = ['id', 'entity_type', 'entity_name', 'total_points', 'rank', 'team', 'updated_at']
+        fields = ['id', 'entity_type', 'entity_name', 'total_points', 'rank', 'team', 'activities_count', 'updated_at']
         read_only_fields = ['id', 'updated_at']
+    
+    def get_activities_count(self, obj):
+        """Get the count of activities for this user"""
+        if obj.entity_type == 'user':
+            # Find user by name and get their activity count
+            user = User.objects.filter(name=obj.entity_name).first()
+            if user:
+                return Activity.objects.filter(user_email=user.email).count()
+        return 0
 
 
 class WorkoutSerializer(serializers.ModelSerializer):
